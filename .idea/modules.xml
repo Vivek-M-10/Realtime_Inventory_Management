@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/auth.iml" filepath="$PROJECT_DIR$/.idea/auth.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Smart_supply_chain_tracker.iml" filepath="$PROJECT_DIR$/.idea/Smart_supply_chain_tracker.iml" />
     </modules>
   </component>
 </project>

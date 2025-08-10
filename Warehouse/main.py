@@ -6,12 +6,12 @@ from redis_om import get_redis_connection, HashModel
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from auth.utils import required_role
+
 
 app = FastAPI()
 
 # CORS config
-origins = ["*"]  # Update with actual frontend origin if needed
+origins = ["http://localhost:5173"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -44,7 +44,9 @@ class ProductIn(BaseModel):
     quantity: int
 
 @app.post("/product")
-def create_product(product: ProductIn, admin=Depends(require_role("admin"))):
+def create_product(product: ProductIn):
+    # TODO : add authentication if user is login if it is then check user privilege otherwise redirect to login page
+
     product_obj = Product(**product.dict())
     return product_obj.save()
 
@@ -68,7 +70,7 @@ def format(pk: str):
     }
 
 @app.delete("/products/{product_id}")
-def delete_product(product_id: str, admin=Depends(require_role("admin"))):
+def delete_product(product_id: str):
     product = Product.get(product_id)
     Product.delete(product_id)
     return {"deleted id": product.pk}

@@ -1,0 +1,4 @@
+1. ####### not loading .env file ###########
+
+Explanation : As we are running our app from the root directory so .env file not detected by the uvicorn so we
+               load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env')) this to our database.py

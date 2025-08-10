@@ -1,28 +1,40 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
-from . import models, schemas, utils, database
 from sqlalchemy.orm import Session
-
-app = FastAPI()
+from . import database, models, schemas, auth, roles
+from dotenv import load_dotenv
+from auth.auth import oauth2_scheme
+load_dotenv()
 
 models.Base.metadata.create_all(bind=database.engine)
+
+app = FastAPI()
 
 @app.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     db_user = db.query(models.User).filter(models.User.username == user.username).first()
     if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed_password = utils.get_password_hash(user.password)
-    new_user = models.User(username=user.username, hashed_password=hashed_password, role=user.role)
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+    hashed_pw = auth.hash_password(user.password)
+    new_user = models.User(username=user.username, hashed_password=hashed_pw, role=user.role)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"msg": "User registered successfully"}
+    return {"message": "User registered successfully"}
 
 @app.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
-    if not user or not utils.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = utils.create_access_token(data={"sub": user.username, "role": user.role})
-    return {"access_token": access_token, "token_type": "bearer"}
+def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
+    user = db.query(models.User).filter(models.User.username == credentials.username).first()
+    if not user or not auth.verify_password(credentials.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    token = auth.create_access_token({"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/admin-only")
+def admin_only(user=Depends(roles.role_required("admin"))):
+    return {"message": f"Hello Admin {user.username}"}
+
+@app.get("/user-only")
+def user_only(user=Depends(roles.role_required("user"))):
+    return {"message": f"Hello User {user.username}"}
