@@ -4,10 +4,25 @@ from . import database, models, schemas, auth, roles
 from dotenv import load_dotenv
 from auth.auth import oauth2_scheme
 load_dotenv()
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
+
+# CORS config
+origins = ["http://localhost:5173"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
@@ -29,12 +44,12 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     token = auth.create_access_token({"sub": user.username})
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer", "role": user.role}
 
 @app.get("/admin-only")
-def admin_only(user=Depends(roles.role_required("admin"))):
+def admin_only(user=Depends(roles.role_required("Admin"))):
     return {"message": f"Hello Admin {user.username}"}
 
 @app.get("/user-only")
-def user_only(user=Depends(roles.role_required("user"))):
+def user_only(user=Depends(roles.role_required("User"))):
     return {"message": f"Hello User {user.username}"}

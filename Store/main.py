@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from redis_om import get_redis_connection, HashModel
 from fastapi.background import BackgroundTasks
+from auth.roles import role_required
 
 
 
@@ -48,7 +49,7 @@ class Order(HashModel):
 def create_order(
     product_order: ProductOrderIn,
     background_tasks: BackgroundTasks,
-     # ✅ Restrict to "user" role
+    user=Depends(role_required("User"))# ✅ Restrict to "user" role
 ):
     # Fetch product details
     req = requests.get(f'http://localhost:8001/product/{product_order.product_id}')

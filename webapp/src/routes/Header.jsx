@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
+import Registration from './Registeration';
 
 export default function ButtonAppBar() {
   return (
@@ -22,11 +23,11 @@ export default function ButtonAppBar() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            VKart
+            Smart Warehouse Management
           </Typography>
-          <Button color="primary">Login</Button>
-            <Button color="secondary">Register</Button>
-             <Button color="inherit">Add To Cart</Button>
+          {/* <Button color="primary">Login</Button>
+            <Button color="secondary" onClick={<Registration />}>Register</Button>
+             <Button color="inherit">Add To Cart</Button> */}
         </Toolbar>
       </AppBar>
     </Box>

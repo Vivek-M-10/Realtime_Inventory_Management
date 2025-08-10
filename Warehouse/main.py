@@ -2,10 +2,11 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from redis_om import get_redis_connection, HashModel
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from auth.roles import role_required
 
 
 app = FastAPI()
@@ -44,7 +45,7 @@ class ProductIn(BaseModel):
     quantity: int
 
 @app.post("/product")
-def create_product(product: ProductIn):
+def create_product(product: ProductIn, user=Depends(role_required("Admin"))):
     # TODO : add authentication if user is login if it is then check user privilege otherwise redirect to login page
 
     product_obj = Product(**product.dict())
@@ -70,7 +71,7 @@ def format(pk: str):
     }
 
 @app.delete("/products/{product_id}")
-def delete_product(product_id: str):
+def delete_product(product_id: str, user=Depends(role_required("Admin"))):
     product = Product.get(product_id)
     Product.delete(product_id)
     return {"deleted id": product.pk}
