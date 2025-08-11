@@ -72,33 +72,83 @@ export const ProductsCreate = ({ onClose, onProductAdded }) => {
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
 
-  const handleCreate = (event) => {
-    event?.preventDefault();
+  // const handleCreate = (event) => {
+  //   event?.preventDefault();
+  //
+  //   const json_string = JSON.stringify({ name, price, quantity });
+  //
+  //   const requestOptions = {
+  //     method: 'POST',
+  //     headers: new Headers({
+  //       'Content-Type': 'application/json'
+  //     }),
+  //     body: json_string
+  //   };
+  //
+  //   fetch(BASE_URL + 'product', requestOptions)
+  //     .then(response => {
+  //       if (!response.ok) {
+  //         throw response;
+  //       }
+  //       return response.json();
+  //     })
+  //     .then(() => {
+  //       onProductAdded(); // refresh list in parent
+  //     })
+  //     .catch(error => {
+  //       console.log(error);
+  //     });
+  // };
 
+    const handleCreate = async (event) => {
+  event?.preventDefault();
+
+  const token = localStorage.getItem("token"); // get token from login
+  if (!token) {
+    alert("You must be logged in.");
+    return;
+  }
+
+  try {
+    // Step 1: Check if user is admin
+    const adminCheck = await fetch("http://localhost:8002/admin-only", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!adminCheck.ok) {
+      alert("Only admins can create a product.");
+      return;
+    }
+
+    // Step 2: Proceed to create product
     const json_string = JSON.stringify({ name, price, quantity });
 
     const requestOptions = {
-      method: 'POST',
-      headers: new Headers({
-        'Content-Type': 'application/json'
-      }),
-      body: json_string
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`, // pass token here too
+      },
+      body: json_string,
     };
 
-    fetch(BASE_URL + 'product', requestOptions)
-      .then(response => {
-        if (!response.ok) {
-          throw response;
-        }
-        return response.json();
-      })
-      .then(() => {
-        onProductAdded(); // refresh list in parent
-      })
-      .catch(error => {
-        console.log(error);
-      });
-  };
+    const response = await fetch(BASE_URL + "product", requestOptions);
+    if (!response.ok) {
+      throw response;
+    }
+
+    await response.json();
+    onProductAdded(); // refresh list in parent
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Something went wrong while creating the product.");
+  }
+};
 
   return (
     <Stack spacing={1}>

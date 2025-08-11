@@ -44,7 +44,7 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(database.get_db)
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     token = auth.create_access_token({"sub": user.username})
-    return {"access_token": token, "token_type": "bearer", "role": user.role}
+    return {"access_token": token, "token_type": "bearer", "role": user.role,"username":user.username}
 
 @app.get("/admin-only")
 def admin_only(user=Depends(roles.role_required("Admin"))):

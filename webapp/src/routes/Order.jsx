@@ -1,85 +1,3 @@
-// import {useEffect, useState} from "react";
-
-// const PRODUCTS_URL = "http://localhost:8001/"
-// const ORDERS_URL = 'http://localhost:8000/'
-
-// const Order = () => {
-//     const [id, setId] = useState('');
-//     const [quantity, setQuantity] = useState('');
-//     const [message, setMessage] = useState('');
-
-//     useEffect(() => {
-//         fetch(PRODUCTS_URL + 'product/' + id)
-//             .then(response => {
-//                 if (response.ok) {
-//                     return response.json()
-//                 }
-
-//                 throw response
-//             })
-//             .then(data => {
-//                 const price = parseFloat(data.price) *1.2
-//                 setMessage(`Your product price is $${price}`)
-//             })
-//     }, [id])
-
-//     const handleCreate = ((event) => {
-//         event.preventDefault()
-
-//         const json_string  = JSON.stringify(
-//             {
-//                 'product_id': id,
-//                 "quantity":quantity
-//             })
-
-//         const requestOptions = {
-//             method: 'POST',
-//             headers: new Headers({
-//                 'Content-Type' : 'application/json'
-//             }),
-//             body: json_string
-//         }
-
-//         fetch(ORDERS_URL + 'order',  requestOptions)
-//             .then(response => {
-//                 if (!response.ok){
-//                     throw response
-//                 }
-//             })
-//             .then(data => {
-//                 setMessage(`Order for ${quantity} item sent`)
-//             })
-//             .catch(error => {
-//                 console.log(error)
-//             })
-//     })
-
-//     return (
-//         <div className="body">
-//             <div className="order_title title">Order</div>
-//             <div>
-//                 <input
-//                     className="input-1"
-//                     placeholder="Product Id"
-//                     onChange={(event) => setId(event.target.value)}
-//                 />
-//             </div>
-//             <div>
-//                 <input
-//                     className="input-1"
-//                     placeholder="Quantity"
-//                     onChange={(event) => setQuantity(event.target.value)}
-//                 />
-//             </div>
-//             <button className="button-4" onClick={handleCreate}>
-//                 Place Order
-//             </button>
-//             <div className="form-message">{message}</div>
-//         </div>
-//     );
-// };
-
-// export default Order
 
 
 import { useEffect, useState } from "react";
@@ -108,7 +26,7 @@ const modalStyle = {
   width: 400,
 };
 
-const OrderModal = ({ open, onClose }) => {
+const OrderModal = ({ open, onClose, onOrderPlaced }) => {
   const [id, setId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [message, setMessage] = useState("");
@@ -133,6 +51,19 @@ const OrderModal = ({ open, onClose }) => {
   const handleCreate = (event) => {
     event.preventDefault();
 
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+
+    if (!token) {
+      alert("Please log in first.");
+      return;
+    }
+
+    if (role !== "User") {
+      alert("Only users can place an order.");
+      return;
+    }
+
     const json_string = JSON.stringify({
       product_id: id,
       quantity: quantity,
@@ -140,9 +71,10 @@ const OrderModal = ({ open, onClose }) => {
 
     const requestOptions = {
       method: "POST",
-      headers: new Headers({
+      headers: {
         "Content-Type": "application/json",
-      }),
+        "Authorization": `Bearer ${token}`,
+      },
       body: json_string,
     };
 
@@ -151,9 +83,17 @@ const OrderModal = ({ open, onClose }) => {
         if (!response.ok) {
           throw response;
         }
+        return response.json();
       })
       .then(() => {
         setMessage(`Order for ${quantity} item(s) placed successfully`);
+        if (onOrderPlaced) {
+          onOrderPlaced(); // refresh data in parent
+          setId("");
+          setQuantity("");
+          setMessage("");
+        }
+        onClose(); // close modal after success
       })
       .catch((error) => {
         console.log(error);
@@ -164,7 +104,7 @@ const OrderModal = ({ open, onClose }) => {
   return (
     <Modal open={open} onClose={onClose}>
       <Paper sx={modalStyle}>
-        <Typography variant="h6" mb={2} color="black" sx={{font:50, fontWeight:600}}>
+        <Typography variant="h6" mb={2} sx={{ fontWeight: 600 }}>
           Place an Order
         </Typography>
 
@@ -183,7 +123,7 @@ const OrderModal = ({ open, onClose }) => {
             fullWidth
           />
           {message && (
-            <Typography variant="body2" color="secondary" >
+            <Typography variant="body2" color="secondary">
               {message}
             </Typography>
           )}
@@ -200,5 +140,6 @@ const OrderModal = ({ open, onClose }) => {
     </Modal>
   );
 };
+
 
 export default OrderModal;

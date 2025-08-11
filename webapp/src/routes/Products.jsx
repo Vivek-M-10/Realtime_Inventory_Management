@@ -52,18 +52,52 @@ const navigate = useNavigate()
     fetchProducts();
   }, []);
 
-  const handleDelete = (event, id) => {
-    event.preventDefault();
-    fetch(BASE_URL + "products/" + id, { method: "DELETE" })
-      .then((response) => {
-        if (response.ok) {
-          setProducts((prev) => prev.filter((product) => product.id !== id));
-        } else {
-          throw new Error("Delete failed");
-        }
-      })
-      .catch((error) => console.error(error));
-  };
+  // const handleDelete = (event, id) => {
+  //   event.preventDefault();
+  //
+  //   fetch(BASE_URL + "products/" + id, { method: "DELETE" })
+  //     .then((response) => {
+  //       if (response.ok) {
+  //         setProducts((prev) => prev.filter((product) => product.id !== id));
+  //       } else {
+  //         throw new Error("Delete failed");
+  //       }
+  //     })
+  //     .catch((error) => console.error(error));
+  // };
+
+    const handleDelete = (event, id) => {
+  event.preventDefault();
+
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token) {
+    alert("Please log in first.");
+    return;
+  }
+
+  if (role !== "Admin") {
+    alert("You are not authorized to delete a product.");
+    return;
+  }
+
+  fetch(BASE_URL + "products/" + id, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`, // pass token so backend verifies
+      "Content-Type": "application/json"
+    }
+  })
+    .then((response) => {
+      if (response.ok) {
+        setProducts((prev) => prev.filter((product) => product.id !== id));
+      } else {
+        throw new Error("Delete failed");
+      }
+    })
+    .catch((error) => console.error(error));
+};
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -125,24 +159,27 @@ const navigate = useNavigate()
               <TableBody>
                 {products && products.length > 0 ? (
                   products
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>{product.id}</TableCell>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell>{product.price}</TableCell>
-                        <TableCell>{product.quantity}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={(e) => handleDelete(e, product.id)}
-                          >
-                            Delete
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+  .slice() // make a copy so we don’t mutate state
+  .reverse()
+  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+  .map((product) => (
+    <TableRow key={product.id}>
+      <TableCell>{product.id}</TableCell>
+      <TableCell>{product.name}</TableCell>
+      <TableCell>{product.price}</TableCell>
+      <TableCell>{product.quantity}</TableCell>
+      <TableCell>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={(e) => handleDelete(e, product.id)}
+        >
+          Delete
+        </Button>
+      </TableCell>
+    </TableRow>
+  ))
+
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} align="center">
@@ -191,7 +228,13 @@ const navigate = useNavigate()
       </Modal>
 
       {/* ORDER modal (OrderModal already renders a Modal internally) */}
-      <OrderModal open={openOrder} onClose={() => setOpenOrder(false)} />
+      {/*<OrderModal open={openOrder} onClose={() => setOpenOrder(false)} />*/}
+        <OrderModal
+  open={openOrder}
+  onClose={() => setOpenOrder(false)}
+  onOrderPlaced={fetchProducts} // refresh table after placing order
+/>
+
     </>
   );
 };

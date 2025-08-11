@@ -58,7 +58,7 @@ def create_order(
     product = req.json()
 
     # Calculate fee and total
-    fee = product['price'] * 0.2
+    fee = 100
     total = product['price'] * product_order.quantity + fee
 
     # Create order

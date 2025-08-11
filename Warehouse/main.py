@@ -46,8 +46,6 @@ class ProductIn(BaseModel):
 
 @app.post("/product")
 def create_product(product: ProductIn, user=Depends(role_required("Admin"))):
-    # TODO : add authentication if user is login if it is then check user privilege otherwise redirect to login page
-
     product_obj = Product(**product.dict())
     return product_obj.save()
 
