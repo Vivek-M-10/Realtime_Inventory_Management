@@ -1,68 +1,61 @@
+import requests
 import time
-import logging
-from main import redis, Product
+import os
+from redis_om import get_redis_connection
+from dotenv import load_dotenv
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+load_dotenv()
+
+REDIS_HOST = "redis-10991.c325.us-east-1-4.ec2.redns.redis-cloud.com"
+REDIS_PORT = 10991
+WAREHOUSE_API = "http://localhost:8001"  # Warehouse service URL
+INTERNAL_SECRET = os.getenv("INTERNAL_SECRET")
+
+redis = get_redis_connection(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    decode_responses=True,
+    password="uEDy96wlarq3bInRYlyadQ7CQtYSGntL"
 )
 
-STREAM_KEY = "order-completed"
-GROUP_NAME = "warehouse-group"
-CONSUMER_NAME = "fulfillment-service"
-
-# Create group if it doesn't exist
-try:
-    redis.xgroup_create(name=STREAM_KEY, groupname=GROUP_NAME, mkstream=True)
-    logging.info(f"Created group '{GROUP_NAME}' for stream '{STREAM_KEY}'")
-except Exception as e:
-    logging.warning(f"Group may already exist: {e}")
+def update_product_stock(product_id: str, quantity: int):
+    try:
+        response = requests.put(
+            f"{WAREHOUSE_API}/internal-update/{product_id}",
+            headers={"X-Internal-Secret": INTERNAL_SECRET},
+            json={"quantity": quantity}
+        )
+        if response.status_code == 200:
+            print(f"[Fulfillment] Successfully updated product {product_id} stock by {quantity}")
+        else:
+            print(f"[Fulfillment] Failed to update product {product_id}: {response.text}")
+    except Exception as e:
+        print(f"[Fulfillment] Exception during update for product {product_id}: {e}")
 
 def process_order(order_data):
-    """Process a single order and update product quantity."""
+    product_id = order_data.get("product_id")
+    quantity_str = order_data.get("quantity", "0")
     try:
-        product_id = order_data.get(b'product_id', b'').decode()
-        quantity = int(order_data.get(b'quantity', b'0'))
+        quantity = int(quantity_str)
+    except ValueError:
+        print(f"[Fulfillment] Invalid quantity value: {quantity_str}, skipping order")
+        return
 
-        if not product_id or quantity <= 0:
-            logging.error(f"Invalid order data: {order_data}")
-            return
-
-        product = Product.get(product_id)
-        if product.quantity >= quantity:
-            product.quantity -= quantity
-            product.save()
-            logging.info(f"Order processed: Product {product_id}, -{quantity} units")
-        else:
-            logging.warning(f"Insufficient stock for {product_id}, refunding...")
-            redis.xadd(name='refund-order', fields=order_data)
-    except Exception as e:
-        logging.error(f"Error processing order {order_data}: {e}")
-
-def consume_orders():
-    """Continuously consume messages from the Redis stream."""
-    try:
-        while True:
-            results = redis.xreadgroup(
-                groupname=GROUP_NAME,
-                consumername=CONSUMER_NAME,
-                streams={STREAM_KEY: '>'},
-                count=1,
-                block=5000  # Wait max 5s before checking again
-            )
-
-            if results:
-                for stream_name, messages in results:
-                    for message_id, message_data in messages:
-                        process_order(message_data)
-                        # Acknowledge message after processing
-                        redis.xack(STREAM_KEY, GROUP_NAME, message_id)
-            else:
-                logging.debug("No new messages...")
-    except KeyboardInterrupt:
-        logging.info("Shutting down consumer gracefully...")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+    print(f"[Fulfillment] Processing order for product {product_id}, qty {quantity}")
+    update_product_stock(product_id, quantity)
 
 if __name__ == "__main__":
-    consume_orders()
+    print("Fulfillment service started. Listening for order-completed events...")
+
+    last_id = "0-0"
+    while True:
+        try:
+            entries = redis.xread({"order-completed": last_id}, block=5000, count=1)
+            if entries:
+                stream, messages = entries[0]
+                for message_id, message_data in messages:
+                    last_id = message_id
+                    process_order(message_data)
+        except Exception as e:
+            print(f"[Fulfillment] Error processing orders: {e}")
+        time.sleep(1)

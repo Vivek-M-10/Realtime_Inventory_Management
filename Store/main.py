@@ -99,3 +99,15 @@ def order_complete(order: Order):
     order.status = "completed"
     order.save()
     redis.xadd("order-completed", fields=order.dict())
+
+@app.delete("/all_orders/")
+def clear_orders():
+    # Delete all orders from Redis OM
+    for order_pk in Order.all_pks():
+        Order.delete(order_pk)
+
+    # Delete streams
+    redis.delete("order-completed")
+    redis.delete("refund-order")
+
+    return {"status": "success", "message": "All orders and streams cleared"}
