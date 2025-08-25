@@ -10,3 +10,5 @@ run-auth:
 run-webapp:
 	cd webapp && npm run dev -- --port 5173
 
+run-chatbot:
+	PYTHONPATH=. python -m uvicorn chatbot.main:app --reload --port 8003

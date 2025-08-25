@@ -6,16 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-REDIS_HOST = "redis-10991.c325.us-east-1-4.ec2.redns.redis-cloud.com"
-REDIS_PORT = 10991
 WAREHOUSE_API = "http://localhost:8001"  # Warehouse service URL
 INTERNAL_SECRET = os.getenv("INTERNAL_SECRET")
 
 redis = get_redis_connection(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
+    host="redis-13877.c17.us-east-1-4.ec2.redns.redis-cloud.com",
+    port=13877,
     decode_responses=True,
-    password="uEDy96wlarq3bInRYlyadQ7CQtYSGntL"
+    password="8LTSrrJshiVsSYvcH5UCKpcmHGJZZqtW",
 )
 
 def update_product_stock(product_id: str, quantity: int):

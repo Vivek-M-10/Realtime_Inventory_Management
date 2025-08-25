@@ -24,10 +24,10 @@ app.add_middleware(
 
 # Redis connection
 redis = get_redis_connection(
-    host="redis-10991.c325.us-east-1-4.ec2.redns.redis-cloud.com",
-    port=10991,
+    host="redis-13877.c17.us-east-1-4.ec2.redns.redis-cloud.com",
+    port=13877,
     decode_responses=True,
-    password="uEDy96wlarq3bInRYlyadQ7CQtYSGntL",
+    password="8LTSrrJshiVsSYvcH5UCKpcmHGJZZqtW",
 )
 
 class ProductOrderIn(BaseModel):

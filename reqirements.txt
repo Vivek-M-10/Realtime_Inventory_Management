@@ -41,3 +41,9 @@ typing-inspection==0.4.1
 typing_extensions==4.14.1
 urllib3==2.5.0
 uvicorn==0.35.0
+openai
+langchain
+pandas
+reportlab
+jinja2
+
