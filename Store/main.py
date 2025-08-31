@@ -7,8 +7,6 @@ from redis_om import get_redis_connection, HashModel
 from fastapi.background import BackgroundTasks
 from auth.roles import role_required
 
-
-
 app = FastAPI()
 
 # CORS config
@@ -30,12 +28,14 @@ redis = get_redis_connection(
     password="8LTSrrJshiVsSYvcH5UCKpcmHGJZZqtW",
 )
 
+# ---------------------- Models ----------------------
 class ProductOrderIn(BaseModel):
     product_id: str
     quantity: int
 
 class Order(HashModel):
     product_id: str
+    user_id: str       # ✅ store user id
     price: float
     fee: float
     quantity: int
@@ -45,25 +45,33 @@ class Order(HashModel):
     class Meta:
         database = redis
 
+# ---------------------- Endpoints ----------------------
 @app.post("/order")
 def create_order(
     product_order: ProductOrderIn,
     background_tasks: BackgroundTasks,
-    user=Depends(role_required("User"))# ✅ Restrict to "user" role
+    user=Depends(role_required("User"))  # ✅ Require login + User role
 ):
-    # Fetch product details
+    """
+    Create order tied to the logged-in user
+    """
+    # Fetch product details from warehouse
     req = requests.get(f'http://localhost:8001/product/{product_order.product_id}')
     if req.status_code != 200:
         raise HTTPException(status_code=404, detail="Product not found")
     product = req.json()
 
+    # ✅ Extract user_id from authenticated user object
+    user_id = str(user.id)
+
     # Calculate fee and total
     fee = 100
     total = product['price'] * product_order.quantity + fee
 
-    # Create order
+    # Create order linked to user
     order = Order(
         product_id=product_order.product_id,
+        user_id=user_id,
         price=product['price'],
         quantity=product_order.quantity,
         fee=fee,
@@ -72,6 +80,7 @@ def create_order(
     )
     order.save()
 
+    # Background task to mark order completed
     background_tasks.add_task(order_complete, order)
     return order
 
@@ -87,6 +96,7 @@ def format_order(pk: str):
     order = Order.get(pk)
     return {
         "order_id": order.pk,
+        "user_id": order.user_id,   # ✅ now orders tied to user
         "product_id": order.product_id,
         "quantity": order.quantity,
         "fee": order.fee,
@@ -111,3 +121,7 @@ def clear_orders():
     redis.delete("refund-order")
 
     return {"status": "success", "message": "All orders and streams cleared"}
+
+
+
+

@@ -46,4 +46,6 @@ langchain
 pandas
 reportlab
 jinja2
+openai==1.46.0
+httpx==0.27.2
 
