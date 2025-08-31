@@ -8,7 +8,7 @@ import {
   Paper
 } from "@mui/material";
 import axios from "axios";
-
+import Headers from "./Header"
 const BASE_URL = "http://localhost:8002/";
 
 export const Login = () => {
@@ -95,8 +95,14 @@ export const Login = () => {
   }
 };
 
+const handleRegister = async (e) => {
+  navigate("/register");
+}
+
 
   return (
+    <>
+     <Headers />
     <Paper
       elevation={3}
       sx={{
@@ -140,7 +146,18 @@ export const Login = () => {
         >
           Login
         </Button>
+        <Button
+          type="submit"
+          variant="contained"
+          color="success"
+          fullWidth
+          sx={{ mt: 2 }}
+          onClick={handleRegister}
+        >
+          Register
+        </Button>
       </Box>
     </Paper>
+    </>
   );
 };

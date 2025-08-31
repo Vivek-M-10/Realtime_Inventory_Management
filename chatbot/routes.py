@@ -18,3 +18,18 @@ def chat_with_bot(req: ChatRequest, user=Depends(role_required("User"))):
         role=user.role
     )
     return ChatResponse(reply=response)
+
+
+@router.post("/kpi", response_model=ChatResponse)
+def chat_with_bot(req: ChatRequest, user=Depends(role_required("Admin"))):
+    """
+    Conversational chatbot endpoint.
+    Users can see invoices/last orders, admins can see KPIs.
+    """
+    response = generate_response(
+        user_id=str(user.id),
+        message=req.message,
+        role=user.role
+    )
+    return ChatResponse(reply=response)
+

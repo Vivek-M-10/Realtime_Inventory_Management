@@ -35,12 +35,12 @@ def fetch_admin_kpis():
         revenue = sum(o["total"] for o in all_orders)
         completed = sum(1 for o in all_orders if o["status"] == "completed")
         pending = sum(1 for o in all_orders if o["status"] == "pending")
-        return {
+        return [{
             "total_orders": total_orders,
             "completed_orders": completed,
             "pending_orders": pending,
             "revenue": revenue,
-        }
+        }]
     except Exception:
         return {}
 

@@ -20,6 +20,7 @@ import Header from "./Header.jsx";
 import { ProductsCreate } from "./ProductCreate.jsx"; // <-- make sure this file exports named ProductsCreate
 import OrderModal from "./Order.jsx"; // <-- make sure this file exports default OrderModal
 import { useNavigate } from "react-router-dom";
+import ChatBot from "./chatbot.jsx";
 const BASE_URL = "http://localhost:8001/";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -234,6 +235,8 @@ const navigate = useNavigate()
   onClose={() => setOpenOrder(false)}
   onOrderPlaced={fetchProducts} // refresh table after placing order
 />
+
+<ChatBot />
 
     </>
   );
