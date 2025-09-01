@@ -1,0 +1,3 @@
+STORE_URL=http://localhost:8000
+AUTH_URL=http://localhost:8002
+OPENAI_API_KEY=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
